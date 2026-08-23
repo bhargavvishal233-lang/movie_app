@@ -105,7 +105,7 @@ export default function MovieCarousel({
         {movies.map((movie, index) => {
           const isWatchlisted = watchlist.some((m) => m.id === movie.id);
           return (
-            <SwiperSlide key={movie.id} className="!h-auto">
+            <SwiperSlide key={movie.id} className="!h-auto flex">
               <motion.div
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}

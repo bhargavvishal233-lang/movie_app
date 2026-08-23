@@ -11,15 +11,15 @@ export default function Navbar({ searchQuery, setSearchQuery, activeGenre, setAc
         <div className="flex items-center justify-between h-20">
           
           {/* Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => { setSearchQuery(''); setActiveGenre('All'); }}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-lg shadow-red-600/30 group-hover:scale-105 transition-transform duration-300">
-              <Film className="w-6 h-6 text-white" />
+          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group" onClick={() => { setSearchQuery(''); setActiveGenre('All'); }}>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-lg shadow-red-600/30 group-hover:scale-105 transition-transform duration-300">
+              <Film className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <span className="text-2xl font-black tracking-tight text-white">
-                Movie<span className="text-red-500">App</span>
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Movie<span className="text-red-500 hidden sm:inline">App</span>
               </span>
-              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] font-semibold bg-red-950/80 text-red-400 border border-red-800/50 rounded-full">
+              <span className="hidden lg:inline-block ml-2 px-2 py-0.5 text-[10px] font-semibold bg-red-950/80 text-red-400 border border-red-800/50 rounded-full">
                 AI Powered
               </span>
             </div>
@@ -55,19 +55,19 @@ export default function Navbar({ searchQuery, setSearchQuery, activeGenre, setAc
           </nav>
 
           {/* Search Bar & User Profile */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             
             {/* Search Input */}
-            <div className="relative w-44 sm:w-64">
+            <div className="relative w-28 sm:w-64 focus-within:w-40 sm:focus-within:w-64 transition-all duration-300">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 h-4 text-slate-400" />
+                <Search className="h-4 w-4 text-slate-400" />
               </div>
               <input
                 type="text"
-                placeholder="Search movies, genres..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-900/90 border border-slate-700/80 rounded-full text-white placeholder-slate-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200"
+                className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-900/90 border border-slate-700/80 rounded-full text-white placeholder-slate-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200"
               />
               {searchQuery && (
                 <button 
@@ -82,7 +82,7 @@ export default function Navbar({ searchQuery, setSearchQuery, activeGenre, setAc
             {/* Watchlist Counter Button */}
             <button 
               onClick={onOpenWatchlist}
-              className="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-full transition-colors duration-200"
+              className="relative p-1.5 sm:p-2 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-full transition-colors duration-200"
               title="Watchlist"
             >
               <Heart className="w-5 h-5" />

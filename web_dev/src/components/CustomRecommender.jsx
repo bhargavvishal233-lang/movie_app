@@ -139,7 +139,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
     <motion.div
       key={movie.id || index}
       variants={isMobileCarousel ? {} : cardVariants}
-      className="group relative flex flex-col bg-slate-950/90 rounded-2xl border border-slate-800/80 hover:border-red-500/60 overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-red-600/20"
+      className="group relative flex flex-col w-full h-full bg-slate-950/90 rounded-2xl border border-slate-800/80 hover:border-red-500/60 overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-red-600/20"
     >
       {/* Poster Container */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-slate-900">
@@ -265,21 +265,21 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
           </div>
           <input
             type="text"
-            placeholder="Type a movie title (e.g., Inception, Dune, Interstellar)..."
+            placeholder="Type a movie title..."
             value={searchQuery}
             onChange={handleInputChange}
             onFocus={() => {
               if (suggestions.length > 0) setIsDropdownOpen(true);
             }}
-            className="w-full pl-11 pr-44 py-4 bg-slate-950/90 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-sm sm:text-base transition-all"
+            className="w-full pl-11 pr-14 sm:pr-52 py-3 sm:py-4 bg-slate-950/90 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-sm sm:text-base transition-all"
           />
           <button
             type="submit"
             disabled={isSearching}
-            className="absolute right-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-red-600/30 flex items-center space-x-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+            className="absolute right-1.5 sm:right-2 p-2.5 sm:px-5 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
           >
-            <span>{isSearching ? 'Analyzing...' : 'Get Recommendations'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span className="hidden sm:inline">{isSearching ? 'Analyzing...' : 'Get Recommendations'}</span>
+            <ArrowRight className="w-4 h-4 sm:w-4 sm:h-4" />
           </button>
         </div>
 
@@ -360,10 +360,12 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
                 slidesPerView={1.2}
                 centeredSlides={true}
                 loop={true}
+                grabCursor={true}
+                speed={800}
                 className="w-full !px-4 !py-4"
               >
                 {recommendations.map((movie, index) => (
-                  <SwiperSlide key={movie.id || index}>
+                  <SwiperSlide key={movie.id || index} className="!h-auto flex">
                     {renderCard(movie, index, true)}
                   </SwiperSlide>
                 ))}
