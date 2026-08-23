@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Search, Film, Heart, User, Sparkles, Bell, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Search, Film, Heart, User, Sparkles, Bell, ChevronDown, SlidersHorizontal, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({ searchQuery, setSearchQuery, activeGenre, setActiveGenre, watchlistCount, onOpenWatchlist }) {
   const [profileOpen, setProfileOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { currentUser, setIsAuthModalOpen, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 transition-all duration-300">
@@ -93,39 +94,52 @@ export default function Navbar({ searchQuery, setSearchQuery, activeGenre, setAc
               )}
             </button>
 
-            {/* User Profile Avatar */}
-            <div className="relative">
-              <button 
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center space-x-2 p-1.5 rounded-full hover:bg-slate-800/80 border border-slate-700/60 transition-colors focus:outline-none"
-              >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-rose-700 flex items-center justify-center text-white text-xs font-bold shadow-inner">
-                  JD
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
-              </button>
+            {/* User Profile / Auth */}
+            {currentUser ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center space-x-2 p-1.5 rounded-full hover:bg-slate-800/80 border border-slate-700/60 transition-colors focus:outline-none"
+                >
+                  {currentUser.photoURL ? (
+                    <img src={currentUser.photoURL} alt={currentUser.displayName || "User"} className="w-8 h-8 rounded-full border border-slate-700 object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-rose-700 flex items-center justify-center text-white text-xs font-bold shadow-inner">
+                      {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : (currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'U')}
+                    </div>
+                  )}
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
+                </button>
 
-              {/* Profile Dropdown */}
-              {profileOpen && (
-                <div className="absolute right-0 mt-3 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-3 border-b border-slate-800">
-                    <p className="text-sm font-semibold text-white">John Doe</p>
-                    <p className="text-xs text-slate-400 truncate">john.doe@example.com</p>
+                {/* Profile Dropdown */}
+                {profileOpen && (
+                  <div className="absolute right-0 mt-3 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-3 border-b border-slate-800">
+                      <p className="text-sm font-semibold text-white">{currentUser.displayName || "Movie Buff"}</p>
+                      <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button onClick={onOpenWatchlist} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <Heart className="w-4 h-4 mr-2 text-red-500" /> Watchlist ({watchlistCount})
+                      </button>
+                      <button 
+                        onClick={() => { setProfileOpen(false); logout(); }}
+                        className="w-full text-left flex items-center px-4 py-2 text-sm text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                      </button>
+                    </div>
                   </div>
-                  <div className="py-1">
-                    <a href="#profile" className="flex items-center px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                      <User className="w-4 h-4 mr-2 text-slate-400" /> My Profile
-                    </a>
-                    <button onClick={onOpenWatchlist} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                      <Heart className="w-4 h-4 mr-2 text-red-500" /> Watchlist ({watchlistCount})
-                    </button>
-                    <a href="#settings" className="flex items-center px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                      <SlidersHorizontal className="w-4 h-4 mr-2 text-slate-400" /> Preferences
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-red-600/20 active:scale-95"
+              >
+                Sign In
+              </button>
+            )}
 
           </div>
 

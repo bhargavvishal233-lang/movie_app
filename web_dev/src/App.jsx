@@ -10,6 +10,7 @@ import TrailerModal from './components/TrailerModal';
 import WatchlistDrawer from './components/WatchlistDrawer';
 import Footer from './components/Footer';
 import NebulaParticles3D from './components/NebulaParticles3D';
+import AuthModal from './components/AuthModal';
 
 import { mockMovies } from './data/mockMovies';
 import { enhanceMoviesWithTMDB } from './utils/tmdb';
@@ -272,6 +273,8 @@ export default function App() {
       </div>
 
       {/* Modals & Drawers */}
+      <AuthModal />
+      
       <MovieDetailsModal 
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
