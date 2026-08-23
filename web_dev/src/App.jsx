@@ -176,19 +176,34 @@ export default function App() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {filteredMovies.map(movie => (
-                        <MovieCard 
-                          key={movie.id}
-                          movie={movie}
+                    <>
+                      {/* Desktop Grid View */}
+                      <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {filteredMovies.map(movie => (
+                          <MovieCard 
+                            key={movie.id}
+                            movie={movie}
+                            onPlayTrailer={(movie) => setActiveTrailerMovie(movie)}
+                            onOpenDetails={(movie) => setSelectedMovie(movie)}
+                            isWatchlisted={watchlist.some(m => m.id === movie.id)}
+                            onToggleWatchlist={handleToggleWatchlist}
+                            onHoverCard={handleCardHover}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Mobile Carousel View */}
+                      <div className="block sm:hidden -mx-4 px-2">
+                        <MovieCarousel 
+                          movies={filteredMovies}
                           onPlayTrailer={(movie) => setActiveTrailerMovie(movie)}
                           onOpenDetails={(movie) => setSelectedMovie(movie)}
-                          isWatchlisted={watchlist.some(m => m.id === movie.id)}
+                          watchlist={watchlist}
                           onToggleWatchlist={handleToggleWatchlist}
                           onHoverCard={handleCardHover}
                         />
-                      ))}
-                    </div>
+                      </div>
+                    </>
                   )}
                 </section>
               ) : (
