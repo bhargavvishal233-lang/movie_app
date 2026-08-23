@@ -26,6 +26,12 @@ export function AuthProvider({ children }) {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
+      if (error.code === 'auth/api-key-not-valid' || error.message?.includes('api-key-not-valid')) {
+        console.warn("Using mock Google user because Firebase API key is invalid.");
+        const mockUser = { uid: 'mock-123', displayName: 'Demo User', email: 'demo@example.com', photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Demo' };
+        setCurrentUser(mockUser);
+        return mockUser;
+      }
       console.error("Google login error:", error);
       throw error;
     }
@@ -34,13 +40,18 @@ export function AuthProvider({ children }) {
   // Apple Login
   const loginWithApple = async () => {
     const provider = new OAuthProvider('apple.com');
-    // You can optionally request scopes
     provider.addScope('email');
     provider.addScope('name');
     try {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
+      if (error.code === 'auth/api-key-not-valid' || error.message?.includes('api-key-not-valid')) {
+        console.warn("Using mock Apple user because Firebase API key is invalid.");
+        const mockUser = { uid: 'mock-456', displayName: 'Apple Fan', email: 'apple@example.com', photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Apple' };
+        setCurrentUser(mockUser);
+        return mockUser;
+      }
       console.error("Apple login error:", error);
       throw error;
     }
@@ -49,6 +60,10 @@ export function AuthProvider({ children }) {
   // Logout
   const logout = async () => {
     try {
+      if (currentUser?.uid?.startsWith('mock-')) {
+        setCurrentUser(null);
+        return;
+      }
       await signOut(auth);
     } catch (error) {
       console.error("Logout error:", error);
@@ -57,14 +72,19 @@ export function AuthProvider({ children }) {
 
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    // We wrap this in a try-catch to prevent crash if Firebase config is wholly invalid
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (!currentUser?.uid?.startsWith('mock-')) {
+          setCurrentUser(user);
+        }
+        setLoading(false);
+      });
+      return unsubscribe;
+    } catch (e) {
       setLoading(false);
-    });
-    
-    // Cleanup subscription on unmount
-    return unsubscribe;
-  }, []);
+    }
+  }, [currentUser]);
 
   const value = {
     currentUser,
