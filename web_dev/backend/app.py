@@ -1,5 +1,6 @@
 import os
 import pickle
+import json
 import pandas as pd
 import numpy as np
 import re
@@ -127,25 +128,60 @@ def get_trailer(movie: str):
     if not movie:
         raise HTTPException(status_code=400, detail="Movie title required")
     
+    # Strategy 1: Try TMDB API videos if possible
+    try:
+        tmdb_key = "8265bd1679663a7ea12ac168da84d2e8"
+        search_url = f"https://api.themoviedb.org/3/search/movie?query={urllib.parse.quote(movie)}&api_key={tmdb_key}"
+        req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode())
+            if data.get('results'):
+                movie_id = data['results'][0]['id']
+                videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={tmdb_key}&language=en-US"
+                req_vid = urllib.request.Request(videos_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req_vid, timeout=3) as v_resp:
+                    v_data = json.loads(v_resp.read().decode())
+                    results = v_data.get('results', [])
+                    # Look for official trailer
+                    for v in results:
+                        if v.get('site') == 'YouTube' and v.get('type') == 'Trailer' and v.get('key'):
+                            return {"status": "success", "video_id": v['key'], "source": "tmdb"}
+                    # Fallback to any youtube key
+                    for v in results:
+                        if v.get('site') == 'YouTube' and v.get('key'):
+                            return {"status": "success", "video_id": v['key'], "source": "tmdb"}
+    except Exception as tmdb_err:
+        pass
+
+    # Strategy 2: Scrape YouTube search results
     try:
         url = 'https://www.youtube.com/results?search_query=' + urllib.parse.quote(f"{movie} official trailer")
         
-        # Add a realistic User-Agent to prevent 403 blocks
         req = urllib.request.Request(
             url, 
             data=None, 
             headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9'
             }
         )
         
-        html = urllib.request.urlopen(req).read().decode()
-        video_ids = re.findall(r'\"videoId\":\"(.{11})\"', html)
-        
-        if video_ids:
-            return {"status": "success", "video_id": video_ids[0]}
-        else:
-            return {"status": "error", "message": "No trailer found"}
+        with urllib.request.urlopen(req, timeout=5) as response:
+            html = response.read().decode('utf-8', errors='ignore')
+            
+            # Match videoRenderer videoId
+            video_ids = re.findall(r'"videoRenderer":\s*\{"videoId":\s*"([a-zA-Z0-9_-]{11})"', html)
+            if not video_ids:
+                # Match /watch?v=
+                video_ids = re.findall(r'/watch\?v=([a-zA-Z0-9_-]{11})', html)
+            if not video_ids:
+                # General videoId regex
+                video_ids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+            
+            if video_ids:
+                return {"status": "success", "video_id": video_ids[0], "source": "youtube_search"}
+            else:
+                return {"status": "error", "message": "No trailer found"}
             
     except Exception as e:
         return {"status": "error", "message": str(e)}

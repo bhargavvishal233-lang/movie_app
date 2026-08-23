@@ -3,6 +3,7 @@ export const mockMovies = [
     id: 1,
     title: "Dune: Part Two",
     originalTitle: "Dune: Part Two",
+    trailerKey: "Way9Dexny3w",
     posterUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1600&auto=format&fit=crop",
     rating: 8.6,
@@ -20,6 +21,7 @@ export const mockMovies = [
   {
     id: 2,
     title: "Interstellar",
+    trailerKey: "zSWdZVtXT7E",
     posterUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=1600&auto=format&fit=crop",
     rating: 8.7,
@@ -37,6 +39,7 @@ export const mockMovies = [
   {
     id: 3,
     title: "Cyberpunk Odyssey 2099",
+    trailerKey: "qIcTM8WXFjk",
     posterUrl: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop",
     rating: 8.4,
@@ -54,6 +57,7 @@ export const mockMovies = [
   {
     id: 4,
     title: "Oppenheimer",
+    trailerKey: "uYPbbksJxIg",
     posterUrl: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop",
     rating: 8.9,
@@ -71,6 +75,7 @@ export const mockMovies = [
   {
     id: 5,
     title: "The Dark Knight",
+    trailerKey: "EXeTwQWrcwY",
     posterUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=1600&auto=format&fit=crop",
     rating: 9.0,
@@ -88,6 +93,7 @@ export const mockMovies = [
   {
     id: 6,
     title: "Blade Runner 2049",
+    trailerKey: "gCcx85zbxz4",
     posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1600&auto=format&fit=crop",
     rating: 8.0,
@@ -105,6 +111,7 @@ export const mockMovies = [
   {
     id: 7,
     title: "Inception",
+    trailerKey: "YoHD9XEInc0",
     posterUrl: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1600&auto=format&fit=crop",
     rating: 8.8,
@@ -122,6 +129,7 @@ export const mockMovies = [
   {
     id: 8,
     title: "Neon City Chronicles",
+    trailerKey: "LdOM0x0WVFE",
     posterUrl: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1600&auto=format&fit=crop",
     rating: 8.2,
@@ -139,6 +147,7 @@ export const mockMovies = [
   {
     id: 9,
     title: "The Batman",
+    trailerKey: "mqqft2x_Aa4",
     posterUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1600&auto=format&fit=crop",
     rating: 7.8,
@@ -156,6 +165,7 @@ export const mockMovies = [
   {
     id: 10,
     title: "Arrival",
+    trailerKey: "tFMo3UJ4B4g",
     posterUrl: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1600&auto=format&fit=crop",
     rating: 7.9,
@@ -173,6 +183,7 @@ export const mockMovies = [
   {
     id: 11,
     title: "Everything Everywhere All at Once",
+    trailerKey: "wxN1T1ux194",
     posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1600&auto=format&fit=crop",
     rating: 8.8,
@@ -190,6 +201,7 @@ export const mockMovies = [
   {
     id: 12,
     title: "Spider-Man: Across the Spider-Verse",
+    trailerKey: "cqGjhVJWtEg",
     posterUrl: "https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=800&auto=format&fit=crop",
     backdropUrl: "https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=1600&auto=format&fit=crop",
     rating: 8.7,
