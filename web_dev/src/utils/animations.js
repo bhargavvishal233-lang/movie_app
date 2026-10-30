@@ -1,7 +1,12 @@
 // Shared Cinematic Animation Utilities & Motion Variants
 import Lenis from 'lenis';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export const CINEMATIC_EASE = [0.22, 1, 0.36, 1];
+export const GSAP_CINEMATIC_EASE = 'power3.out';
 
 let globalLenis = null;
 
@@ -25,6 +30,14 @@ export const startScroll = () => {
   }
 };
 
+export const scrollToTop = () => {
+  if (globalLenis) {
+    globalLenis.scrollTo(0, { duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  } else if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
 export const initSmoothScroll = () => {
   // Check for reduced motion preference
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,17 +53,17 @@ export const initSmoothScroll = () => {
 
   globalLenis = lenis;
 
-  let rafId;
-  function raf(time) {
-    lenis.raf(time);
-    rafId = requestAnimationFrame(raf);
-  }
-  rafId = requestAnimationFrame(raf);
+  // Synchronize Lenis with GSAP ScrollTrigger
+  lenis.on('scroll', ScrollTrigger.update);
+
+  gsap.ticker.add((time) => {
+    lenis.raf(time * 1000);
+  });
+  gsap.ticker.lagSmoothing(0);
 
   return {
     lenis,
     destroy: () => {
-      cancelAnimationFrame(rafId);
       lenis.destroy();
       if (globalLenis === lenis) {
         globalLenis = null;
@@ -98,4 +111,3 @@ export const staggerContainerVariants = {
     }
   }
 };
-

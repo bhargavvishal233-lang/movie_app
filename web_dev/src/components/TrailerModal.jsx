@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle } from 'lucide-react';
 import { fetchMovieTrailerKey } from '../utils/tmdb';
-import { CINEMATIC_EASE } from '../utils/animations';
+import { CINEMATIC_EASE, stopScroll, startScroll } from '../utils/animations';
 
 export default function TrailerModal({ movie, onClose }) {
   const [videoId, setVideoId] = useState(null);
@@ -11,12 +11,15 @@ export default function TrailerModal({ movie, onClose }) {
   useEffect(() => {
     if (!movie) return;
     
+    stopScroll();
     let isMounted = true;
 
     if (movie.trailerKey) {
       setVideoId(movie.trailerKey);
       setLoading(false);
-      return;
+      return () => {
+        startScroll();
+      };
     }
     
     async function resolveTrailer() {
@@ -62,6 +65,7 @@ export default function TrailerModal({ movie, onClose }) {
 
     return () => {
       isMounted = false;
+      startScroll();
     };
   }, [movie]);
 
@@ -70,18 +74,19 @@ export default function TrailerModal({ movie, onClose }) {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-12 overflow-hidden">
-        {/* Backdrop */}
+        {/* Backdrop Fade (0.3s) */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
           className="fixed inset-0 bg-black/95 backdrop-blur-2xl"
           onClick={onClose}
         />
 
         {/* Modal Window */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.45, ease: CINEMATIC_EASE }}
@@ -98,37 +103,43 @@ export default function TrailerModal({ movie, onClose }) {
             
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full border border-white/20 text-[#8a8a8a] hover:text-white hover:border-white flex items-center justify-center transition-colors"
+              className="group w-8 h-8 rounded-full border border-white/20 text-[#8a8a8a] hover:text-white hover:border-white flex items-center justify-center transition-colors cursor-pointer"
               aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" />
             </button>
           </div>
 
           {/* Video Player Area */}
           <div className="relative aspect-video w-full bg-black flex items-center justify-center">
             {loading ? (
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 <p className="label-caps text-[#8a8a8a]">CONNECTING STREAM...</p>
               </div>
             ) : videoId ? (
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&color=white`}
                 title={`${movie.title} Trailer`}
+                className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                className="w-full h-full border-none"
               />
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-center space-y-2">
-                <AlertCircle className="w-8 h-8 text-[#8a8a8a] mb-2" />
-                <p className="font-display font-bold text-sm text-white uppercase tracking-wider">Trailer Stream Unavailable</p>
-                <p className="text-xs text-[#8a8a8a] max-w-xs">
-                  We could not locate an authorized video stream for this title.
+              <div className="flex flex-col items-center space-y-3 p-8 text-center max-w-md">
+                <AlertCircle className="w-10 h-10 text-[#666666]" />
+                <h4 className="font-display font-bold text-base text-white uppercase">PREVIEW ARCHIVE UNAVAILABLE</h4>
+                <p className="text-xs text-[#8a8a8a] font-normal leading-relaxed">
+                  No verified high-definition preview link found for "{movie.title}".
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Footer Bar */}
+          <div className="px-6 py-3 border-t border-white/10 bg-[#0a0a0a] flex items-center justify-between text-[10px] font-mono tracking-widest text-[#666666] uppercase">
+            <span>FORMAT: 1080P STREAM</span>
+            <span>CINEMATIC ARCHIVE FEED</span>
           </div>
         </motion.div>
       </div>

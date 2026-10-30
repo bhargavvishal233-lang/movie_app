@@ -6,7 +6,34 @@ import { mockMovies } from '../data/mockMovies';
 import { enhanceMoviesWithTMDB } from '../utils/tmdb';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import { CINEMATIC_EASE, fadeUpVariants, staggerContainerVariants } from '../utils/animations';
+import { CINEMATIC_EASE } from '../utils/animations';
+
+// Counting Match Score Component (Counts up from 0 to score)
+function AnimatedScore({ score = 95 }) {
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const duration = 1000;
+    const startTime = performance.now();
+
+    function update(time) {
+      const elapsed = time - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // easeOutExpo
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setVal(Math.round(eased * score));
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    requestAnimationFrame(update);
+  }, [score]);
+
+  return <span>{val}%</span>;
+}
 
 export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
   const [searchQuery, setSearchQuery] = useState('Inception');
@@ -73,6 +100,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
             year: fallbackSet[idx % fallbackSet.length].year || 2024,
             poster: fallbackSet[idx % fallbackSet.length].poster,
             imdbRating: fallbackSet[idx % fallbackSet.length].imdbRating || "8.5 / 10",
+            matchScore: 98 - (idx * 2),
             director: fallbackSet[idx % fallbackSet.length].director || "Recommended Director",
             mainCast: fallbackSet[idx % fallbackSet.length].mainCast || ["Lead Actor", "Supporting Cast"],
             genre: fallbackSet[idx % fallbackSet.length].genre || "Drama / Sci-Fi",
@@ -92,13 +120,16 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
     }
 
     setTimeout(async () => {
-      const fallbackList = getRecommendationsForMovie(query);
+      const fallbackList = getRecommendationsForMovie(query).map((m, idx) => ({
+        ...m,
+        matchScore: 97 - (idx * 2)
+      }));
       setRecommendations(fallbackList);
       setIsSearching(false);
       
       const enhanced = await enhanceMoviesWithTMDB(fallbackList);
       setRecommendations(enhanced);
-    }, 400);
+    }, 600);
   };
 
   const handleSuggestionClick = (title) => {
@@ -109,9 +140,10 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
 
   const renderCard = (movie, index) => (
     <motion.div
-      key={movie.id || index}
-      variants={fadeUpVariants}
-      custom={index}
+      key={`${activeQuery}-${movie.id || index}`}
+      initial={{ opacity: 0, y: 35, filter: 'blur(6px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{ duration: 0.65, delay: index * 0.08, ease: CINEMATIC_EASE }}
       onClick={() => onOpenDetails && onOpenDetails({ 
         ...movie, 
         posterUrl: movie.poster, 
@@ -135,9 +167,9 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
           {movie.imdbRating?.replace(' / 10', '') || '8.5'}
         </div>
 
-        {/* Year Label */}
-        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/85 text-[#8a8a8a] text-[10px] font-mono tracking-wider rounded border border-white/10 backdrop-blur-md">
-          {movie.year}
+        {/* Live Counting Match Score Badge */}
+        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/85 text-white text-[10px] font-mono tracking-wider rounded border border-white/20 backdrop-blur-md">
+          <AnimatedScore score={movie.matchScore || 96} />
         </div>
 
         {/* Hover Action Overlay */}
@@ -147,7 +179,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
               e.stopPropagation();
               onPlayTrailer && onPlayTrailer(movie);
             }}
-            className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-transform"
+            className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-transform cursor-pointer"
             title="Play Trailer"
           >
             <Play className="w-5 h-5 fill-current ml-0.5" />
@@ -199,7 +231,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
   );
 
   return (
-    <section className="mb-20 pt-6 border-t border-white/10">
+    <section className="mb-20 pt-6 border-t border-white/10 relative">
       
       {/* Section Header with Left-to-Right Draw Line */}
       <div className="mb-8 relative pb-4">
@@ -277,7 +309,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
           <button
             type="submit"
             disabled={isSearching}
-            className="btn-cinema absolute right-1.5 top-1.5 bottom-1.5 px-5 rounded-full flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest disabled:opacity-50 z-20"
+            className="btn-cinema absolute right-1.5 top-1.5 bottom-1.5 px-5 rounded-full flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest disabled:opacity-50 z-20 cursor-pointer"
           >
             <span>{isSearching ? 'COMPUTING...' : 'DISCOVER'}</span>
             <ArrowRight className="w-3 h-3" />
@@ -322,7 +354,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
             key={title}
             type="button"
             onClick={() => handleSuggestionClick(title)}
-            className={`px-3 py-1 rounded-full text-[11px] font-medium tracking-wider uppercase transition-all duration-200 border ${
+            className={`px-3 py-1 rounded-full text-[11px] font-medium tracking-wider uppercase transition-all duration-200 border cursor-pointer ${
               activeQuery.toLowerCase() === title.toLowerCase()
                 ? 'bg-white text-black border-white'
                 : 'bg-black text-[#8a8a8a] border-white/15 hover:border-white/40 hover:text-white'
@@ -333,30 +365,51 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
         ))}
       </div>
 
-      {/* Results View / Shimmer Loading Skeleton */}
-      <div>
+      {/* Results View / AI Thinking State */}
+      <div className="relative min-h-[340px]">
         {isSearching ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <div key={n} className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3 space-y-3">
-                <div className="aspect-[2/3] skeleton-monochrome rounded-lg" />
-                <div className="h-4 skeleton-monochrome rounded w-3/4" />
-                <div className="h-3 skeleton-monochrome rounded w-1/2" />
-                <div className="h-3 skeleton-monochrome rounded w-full" />
-              </div>
-            ))}
+          /* AI Thinking State: 3 Pulsing Dots + Thin Scanning Line */
+          <div className="relative overflow-hidden p-12 bg-[#0a0a0a] border border-white/15 rounded-2xl min-h-[340px] flex flex-col items-center justify-center space-y-4">
+            
+            {/* Animated Scanning Line moving vertically */}
+            <div 
+              className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_15px_white] animate-scan-y pointer-events-none" 
+            />
+
+            {/* 3 Sequential Pulsing Dots */}
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-bounce" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <p className="font-display font-bold text-sm tracking-widest uppercase text-white">
+                COMPUTING COSINE SIMILARITY
+              </p>
+              <p className="text-[11px] font-mono tracking-wider text-[#8a8a8a] uppercase">
+                ANALYZING 4,800+ FILM EMBEDDINGS FOR "{activeQuery}"
+              </p>
+            </div>
+
+            <style>{`
+              @keyframes scan-y {
+                0% { top: 0%; opacity: 0; }
+                15% { opacity: 1; }
+                85% { opacity: 1; }
+                100% { top: 100%; opacity: 0; }
+              }
+              .animate-scan-y {
+                animation: scan-y 1.5s ease-in-out infinite;
+              }
+            `}</style>
           </div>
         ) : (
           <>
-            {/* Desktop Grid with Staggered Entrance from Bottom */}
-            <motion.div 
-              variants={staggerContainerVariants}
-              initial="hidden"
-              animate="visible"
-              className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-5"
-            >
+            {/* Desktop Grid with Blur-to-Sharp Staggered Entrance */}
+            <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-5">
               {recommendations.map((movie, index) => renderCard(movie, index))}
-            </motion.div>
+            </div>
 
             {/* Mobile Carousel View */}
             <div className="block sm:hidden -mx-4 px-2">

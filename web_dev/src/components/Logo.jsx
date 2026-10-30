@@ -30,19 +30,17 @@ export default function Logo({ size = 'default', animated = true, className = ''
             m
           </span>
 
-          {/* Film-Reel as 'o' */}
+          {/* Film-Reel as 'o' (1 full rotation on load, 1 slow full rotation on hover) */}
           <motion.div
             className="relative mx-[1px] flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7"
-            initial={animated ? { rotate: -180, scale: 0.8 } : false}
+            initial={animated ? { rotate: -360, scale: 0.8 } : false}
             animate={{ 
-              rotate: isHovered ? 180 : 0,
+              rotate: isHovered ? 360 : 0,
               scale: 1,
             }}
             transition={{
-              rotate: isHovered 
-                ? { duration: 1.2, ease: [0.22, 1, 0.36, 1] }
-                : { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
-              scale: { duration: 0.5 }
+              rotate: { duration: 1.4, ease: [0.22, 1, 0.36, 1] },
+              scale: { duration: 0.6 }
             }}
           >
             <svg 
@@ -94,4 +92,3 @@ export default function Logo({ size = 'default', animated = true, className = ''
     </div>
   );
 }
-
