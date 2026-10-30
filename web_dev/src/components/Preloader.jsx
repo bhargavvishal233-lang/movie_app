@@ -65,13 +65,9 @@ const PRELOADER_POSTERS = [
 export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUrl }) {
   const overlayRef = useRef(null);
 
-  // HUD Elements
+  // Top HUD Elements
   const hudTopRef = useRef(null);
   const topLeftLabelRef = useRef(null);
-  const hudBottomRef = useRef(null);
-  const counterRef = useRef(null);
-  const bottomRightLabelRef = useRef(null);
-  const progressLineRef = useRef(null);
 
   // Scene 1: Logo & Reel
   const centerContentRef = useRef(null);
@@ -236,7 +232,6 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
       gsap.set(reelRef.current, { rotate: 0, scale: 0.6, opacity: 0, transformOrigin: '50% 50%' });
       gsap.set(subtitleRef.current, { opacity: 0, letterSpacing: '0.5em', y: 6 });
       gsap.set(maskWrapperRef.current, { overflow: 'hidden' });
-      gsap.set(progressLineRef.current, { scaleX: 0, transformOrigin: 'left center' });
 
       // Scene 2
       gsap.set(scene2ContainerRef.current, { opacity: 0 });
@@ -247,28 +242,7 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
       posterFrameRefs.current.forEach(el => el && gsap.set(el, { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0, scale: 0.94 }));
 
       // -------------------------------------------------------------
-      // 1. MASTER PROGRESS COUNTER & BOTTOM PROGRESS LINE (0 -> 100%)
-      // -------------------------------------------------------------
-      const counterProgress = { val: 0 };
-      tl.to(counterProgress, {
-        val: 100,
-        duration: tScene2Exit,
-        ease: 'power1.inOut',
-        onUpdate: () => {
-          if (counterRef.current) {
-            counterRef.current.textContent = String(Math.round(counterProgress.val)).padStart(3, '0') + '%';
-          }
-        }
-      }, tScene1Start);
-
-      tl.to(progressLineRef.current, {
-        scaleX: 1,
-        duration: tScene2Exit,
-        ease: 'power1.inOut'
-      }, tScene1Start);
-
-      // -------------------------------------------------------------
-      // 2. SCENE 1: LOGO & FILM REEL SEQUENCE
+      // 1. SCENE 1: LOGO & FILM REEL SEQUENCE
       // -------------------------------------------------------------
       // Thin white horizontal line draws from center
       tl.to(lineRef.current, {
@@ -361,19 +335,6 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
         }
       }, tRollStart);
 
-      // Sync Bottom-Right HUD label -> "FRAME 001/024" counting quickly to 024
-      const frameCounter = { f: 1 };
-      tl.to(frameCounter, {
-        f: 24,
-        duration: tScene2Exit - tRollStart,
-        ease: 'power1.inOut',
-        onUpdate: () => {
-          if (bottomRightLabelRef.current) {
-            bottomRightLabelRef.current.textContent = `FRAME ${String(Math.round(frameCounter.f)).padStart(3, '0')}/024`;
-          }
-        }
-      }, tRollStart);
-
       // Word Roll: SCI-FI, ACTION, DRAMA, THRILLER, ANIMATION
       genreWords.forEach((word, idx) => {
         const el = genreWordRefs.current[idx];
@@ -429,12 +390,10 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
       // -------------------------------------------------------------
       // 7. SCENE 2 - STAGE 5: EXIT INTO THE HERO
       // -------------------------------------------------------------
-      // Everything inside the preloader fades out quickly as counter hits 100%
+      // Everything inside the preloader fades out quickly
       tl.to([
         scene2ContainerRef.current,
-        hudTopRef.current,
-        hudBottomRef.current,
-        progressLineRef.current
+        hudTopRef.current
       ], {
         opacity: 0,
         duration: 0.18,
@@ -691,38 +650,6 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
           </span>
         </div>
       </div>
-
-      {/* ========================================================= */}
-      {/* BOTTOM HUD ROW: SYS_LOAD & Calibrating Frame Counter      */}
-      {/* ========================================================= */}
-      <div 
-        ref={hudBottomRef}
-        className="absolute bottom-4 sm:bottom-6 left-0 right-0 px-6 sm:px-10 flex items-end justify-between w-full pointer-events-none z-40 font-mono"
-      >
-        {/* Bottom-Left: SYS_LOAD & Percentage Counter */}
-        <div className="flex flex-col space-y-1">
-          <span className="text-[9px] uppercase tracking-[0.25em] text-[#555555]">SYS_LOAD</span>
-          <span 
-            ref={counterRef} 
-            className="text-xs sm:text-sm font-semibold tracking-widest text-[#8a8a8a]"
-          >
-            000%
-          </span>
-        </div>
-
-        {/* Bottom-Right: Feed / Frame Calibration Indicator */}
-        <div className="flex items-center space-x-2 text-[9px] sm:text-[10px] tracking-[0.25em] text-[#666666] uppercase">
-          <span ref={bottomRightLabelRef}>CALIBRATING ARCHIVE FEED</span>
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* BOTTOM PROGRESS LINE: Full-Width Thin Line                */}
-      {/* ========================================================= */}
-      <div 
-        ref={progressLineRef} 
-        className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-white/40 z-45" 
-      />
 
       {/* ========================================================= */}
       {/* EMBEDDED PROCEDURAL NOISE & FLICKER STYLES                */}
