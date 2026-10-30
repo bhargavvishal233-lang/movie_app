@@ -294,9 +294,8 @@ export default function HeroBanner({
           </MagneticHover>
         </div>
 
-        {/* Bottom Similarity Engine Status Label with Pulsing Dot */}
-        <div className="hero-engine-label flex items-center space-x-2 text-[10px] font-mono tracking-[0.25em] text-[#666666] uppercase">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+        {/* Bottom Similarity Engine Status Label */}
+        <div className="hero-engine-label text-[10px] font-mono tracking-[0.25em] text-[#666666] uppercase">
           <span>FOUND SIMILARITY ENGINE • COSINE RANK 0.98</span>
         </div>
 
