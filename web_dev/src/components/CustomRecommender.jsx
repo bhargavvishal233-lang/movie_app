@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Sparkles, Star, Film, Tv, Play, Info, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ArrowRight, Play, Sparkles, Tv } from 'lucide-react';
 import { mockCustomRecommendations, getRecommendationsForMovie } from '../data/mockRecommenderData';
 import { mockMovies } from '../data/mockMovies';
 import { enhanceMoviesWithTMDB } from '../utils/tmdb';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
+import { CINEMATIC_EASE, fadeUpVariants, staggerContainerVariants } from '../utils/animations';
 
 export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
   const [searchQuery, setSearchQuery] = useState('Inception');
   const [activeQuery, setActiveQuery] = useState('Inception');
   const [isSearching, setIsSearching] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [recommendations, setRecommendations] = useState(mockCustomRecommendations['Inception']);
   
   // Autocomplete state
@@ -18,7 +20,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Handle click outside to close dropdown
+  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -36,13 +38,11 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
     setSearchQuery(value);
     
     if (value.trim().length > 0) {
-      // Filter movies from mock database that include the typed text
       const filtered = mockMovies
         .filter(m => m.title.toLowerCase().includes(value.toLowerCase()))
         .map(m => m.title)
-        // Keep only unique titles in case of duplicates
-        .filter((value, index, self) => self.indexOf(value) === index)
-        .slice(0, 6); // Limit to 6 suggestions
+        .filter((val, index, self) => self.indexOf(val) === index)
+        .slice(0, 6);
         
       setSuggestions(filtered);
       setIsDropdownOpen(true);
@@ -51,7 +51,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
     }
   };
 
-  // TODO: Send query to Node.js / FastAPI backend (/recommend?movie=...)
+  // Submit query to FastAPI backend
   const handleSearchSubmit = async (e, queryToSearch = searchQuery) => {
     if (e) e.preventDefault();
     const query = queryToSearch.trim();
@@ -61,9 +61,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
     setActiveQuery(query);
 
     try {
-      // Fetch from FastAPI backend (http://localhost:8000/recommend?movie=...)
       const response = await fetch(`http://localhost:8000/recommend?movie=${encodeURIComponent(query)}`);
-      
       if (response.ok) {
         const data = await response.json();
         
@@ -76,26 +74,23 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
             poster: fallbackSet[idx % fallbackSet.length].poster,
             imdbRating: fallbackSet[idx % fallbackSet.length].imdbRating || "8.5 / 10",
             director: fallbackSet[idx % fallbackSet.length].director || "Recommended Director",
-            mainCast: fallbackSet[idx % fallbackSet.length].mainCast || ["Star A", "Co-Star B"],
-            genre: fallbackSet[idx % fallbackSet.length].genre || "Sci-Fi / Thriller",
-            whereToWatch: fallbackSet[idx % fallbackSet.length].whereToWatch || ["Netflix", "Amazon Prime Video"]
+            mainCast: fallbackSet[idx % fallbackSet.length].mainCast || ["Lead Actor", "Supporting Cast"],
+            genre: fallbackSet[idx % fallbackSet.length].genre || "Drama / Sci-Fi",
+            whereToWatch: fallbackSet[idx % fallbackSet.length].whereToWatch || ["Netflix", "Apple TV"]
           }));
           
-          // First set the formatted items (will use fallback posters while TMDB loads)
           setRecommendations(formatted);
           setIsSearching(false);
           
-          // Then asynchronously fetch TMDB posters and update again
           const enhanced = await enhanceMoviesWithTMDB(formatted);
           setRecommendations(enhanced);
           return;
         }
       }
     } catch (err) {
-      console.log('FastAPI backend offline, using dynamic fallback recommendations:', err);
+      console.log('FastAPI backend offline, falling back to local dataset:', err);
     }
 
-    // Dynamic local fallback if backend is offline or movie not found
     setTimeout(async () => {
       const fallbackList = getRecommendationsForMovie(query);
       setRecommendations(fallbackList);
@@ -103,7 +98,7 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
       
       const enhanced = await enhanceMoviesWithTMDB(fallbackList);
       setRecommendations(enhanced);
-    }, 350);
+    }, 400);
   };
 
   const handleSuggestionClick = (title) => {
@@ -112,96 +107,86 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
     handleSearchSubmit(null, title);
   };
 
-  // Motion Variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.7,
-        ease: [0.16, 1, 0.3, 1],
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 35 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
-    },
-  };
-
-  const renderCard = (movie, index, isMobileCarousel = false) => (
+  const renderCard = (movie, index) => (
     <motion.div
       key={movie.id || index}
-      variants={isMobileCarousel ? {} : cardVariants}
-      className="group relative flex flex-col w-full h-full bg-slate-950/90 rounded-2xl border border-slate-800/80 hover:border-red-500/60 overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-red-600/20"
+      variants={fadeUpVariants}
+      custom={index}
+      onClick={() => onOpenDetails && onOpenDetails({ 
+        ...movie, 
+        posterUrl: movie.poster, 
+        backdropUrl: movie.poster, 
+        rating: parseFloat(movie.imdbRating) || 8.5, 
+        description: `Algorithmic recommendation generated from "${activeQuery}". Directed by ${movie.director}.` 
+      })}
+      className="group relative flex flex-col w-full h-full bg-[#0a0a0a] border border-white/10 hover:border-white/30 rounded-xl overflow-hidden transition-all duration-400 cursor-pointer hover:-translate-y-1.5"
     >
-      {/* Poster Container */}
-      <div className="relative aspect-[2/3] w-full overflow-hidden bg-slate-900">
+      {/* Poster with Grayscale-to-Color Transition */}
+      <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#121212]">
         <img
           src={movie.poster}
           alt={movie.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+          className="poster-grayscale w-full h-full object-cover group-hover:scale-105 transition-all duration-700 ease-out"
           loading="lazy"
         />
 
-        {/* Rating Badge */}
-        <div className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-950/90 text-amber-400 text-xs font-bold rounded-lg border border-amber-500/40 backdrop-blur-md flex items-center space-x-1 shadow-md">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          <span>IMDb {movie.imdbRating}</span>
+        {/* Minimal Rating Badge */}
+        <div className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-black/85 text-white text-[10px] font-bold tracking-wider rounded border border-white/20 backdrop-blur-md">
+          {movie.imdbRating?.replace(' / 10', '') || '8.5'}
         </div>
 
-        {/* Year Tag */}
-        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-slate-950/90 text-slate-300 text-[11px] font-semibold rounded-md border border-slate-800 backdrop-blur-md">
+        {/* Year Label */}
+        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/85 text-[#8a8a8a] text-[10px] font-mono tracking-wider rounded border border-white/10 backdrop-blur-md">
           {movie.year}
+        </div>
+
+        {/* Hover Action Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlayTrailer && onPlayTrailer(movie);
+            }}
+            className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-transform"
+            title="Play Trailer"
+          >
+            <Play className="w-5 h-5 fill-current ml-0.5" />
+          </button>
         </div>
       </div>
 
-      {/* Card Content & Text Info Stagger */}
-      <motion.div 
-        initial={isMobileCarousel ? false : { opacity: 0, y: 15 }}
-        animate={isMobileCarousel ? false : { opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: index * 0.1 + 0.15 }}
-        className="p-4 flex flex-col justify-between flex-1 space-y-3"
-      >
+      {/* Movie Info Details */}
+      <div className="p-4 flex flex-col justify-between flex-1 space-y-3 bg-[#0a0a0a]">
         <div>
-          {/* Title */}
-          <h3 className="font-bold text-base text-white group-hover:text-red-400 transition-colors line-clamp-1">
+          <div className="label-caps mb-1 text-[#8a8a8a]">
+            {movie.genre}
+          </div>
+          <h3 className="font-display font-bold text-sm text-white group-hover:text-white transition-colors truncate">
             {movie.title}
           </h3>
-          <p className="text-xs text-red-400 font-medium mt-0.5">
-            {movie.genre}
-          </p>
 
-          {/* Director Line */}
-          <div className="text-xs text-slate-300 mt-2.5 leading-tight">
-            <span className="text-slate-500 font-medium">Director: </span>
-            <strong className="text-slate-200">{movie.director}</strong>
+          <div className="text-[11px] text-[#8a8a8a] mt-2 line-clamp-1 font-mono">
+            <span className="text-[#555555]">DIR: </span>
+            <span className="text-white/80">{movie.director}</span>
           </div>
 
-          {/* Main Cast Line */}
-          <div className="text-xs text-slate-300 mt-1.5 line-clamp-2 leading-tight">
-            <span className="text-slate-500 font-medium">Cast: </span>
-            <span className="text-slate-300">{Array.isArray(movie.mainCast) ? movie.mainCast.join(', ') : movie.mainCast}</span>
+          <div className="text-[11px] text-[#8a8a8a] mt-1 line-clamp-1 font-mono">
+            <span className="text-[#555555]">CAST: </span>
+            <span className="text-white/80">{Array.isArray(movie.mainCast) ? movie.mainCast.join(', ') : movie.mainCast}</span>
           </div>
         </div>
 
-        {/* "Where to Watch" Streaming Badges */}
-        <div className="pt-2 border-t border-slate-800/80">
-          <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold mb-1.5">
-            <Tv className="w-3 h-3 text-cyan-400" />
-            <span>Where to Watch:</span>
+        {/* Streaming Availability */}
+        <div className="pt-2 border-t border-white/10">
+          <div className="flex items-center space-x-1.5 label-caps text-[#666666] mb-1.5">
+            <Tv className="w-3 h-3 text-white/70" />
+            <span>AVAILABLE ON</span>
           </div>
           <div className="flex flex-wrap gap-1">
             {Array.isArray(movie.whereToWatch) && movie.whereToWatch.map((provider, idx) => (
               <span
                 key={idx}
-                className="px-2 py-0.5 text-[10px] font-bold bg-slate-900 border border-cyan-500/30 text-cyan-300 rounded-md shadow-inner"
+                className="px-1.5 py-0.5 text-[9px] font-mono tracking-wider bg-black border border-white/15 text-[#d4d4d4] rounded"
               >
                 {provider}
               </span>
@@ -209,116 +194,138 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="pt-1 flex items-center space-x-2">
-          <button
-            onClick={() => onPlayTrailer && onPlayTrailer(movie)}
-            className="flex-1 py-2 bg-red-600/90 hover:bg-red-600 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-colors shadow-md shadow-red-600/20"
-          >
-            <Play className="w-3.5 h-3.5 fill-white" />
-            <span>Trailer</span>
-          </button>
-          <button
-            onClick={() => onOpenDetails && onOpenDetails({ ...movie, posterUrl: movie.poster, backdropUrl: movie.poster, rating: parseFloat(movie.imdbRating), description: `Recommended because you love ${activeQuery}. Directed by ${movie.director}.` })}
-            className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-800 transition-colors"
-            title="View Details"
-          >
-            <Info className="w-4 h-4" />
-          </button>
-        </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 
   return (
-    <motion.section 
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="mb-16 bg-slate-900/70 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden"
-    >
+    <section className="mb-20 pt-6 border-t border-white/10">
       
-      {/* Background Accent Glow */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Section Header & Subtitle */}
-      <div className="relative z-10 max-w-3xl mb-8">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 bg-red-600/20 border border-red-500/30 text-red-400 text-xs font-bold rounded-full mb-3">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>FastAPI & AI Recommender Engine</span>
+      {/* Section Header with Left-to-Right Draw Line */}
+      <div className="mb-8 relative pb-4">
+        <div className="flex items-center space-x-2 label-caps text-[#8a8a8a] mb-2">
+          <Sparkles className="w-3 h-3 text-white" />
+          <span>COSINE SIMILARITY ENGINE</span>
         </div>
-        <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-          Find Movies Like <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-rose-400 to-amber-400">{activeQuery || 'Your Favorite'}</span>
-        </h2>
-        <p className="text-slate-400 text-sm sm:text-base mt-2">
-          Enter any movie you love to get 5 tailored recommendations, streaming availability, director notes, and cast info.
-        </p>
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="overflow-hidden">
+              <motion.h2 
+                initial={{ y: '100%' }}
+                whileInView={{ y: '0%' }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: CINEMATIC_EASE }}
+                className="font-display text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter"
+              >
+                RESONANCE WITH <span className="underline decoration-white/40 underline-offset-8">"{activeQuery}"</span>
+              </motion.h2>
+            </div>
+            <p className="text-xs sm:text-sm text-[#8a8a8a] mt-3 max-w-xl font-normal leading-relaxed">
+              Calculated across 4,800+ films through TMDB tags, cast vectors, and director profiles.
+            </p>
+          </div>
+        </div>
+
+        {/* Thin Drawing Line */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.85, ease: CINEMATIC_EASE }}
+          className="absolute bottom-0 left-0 right-0 h-[1px] bg-white/10 origin-left"
+        />
       </div>
 
-      {/* Search Bar Input */}
-      <form onSubmit={(e) => handleSearchSubmit(e)} className="relative z-50 max-w-2xl mb-6">
-        <div className="relative flex items-center">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-slate-400" />
+      {/* Input Search Form with Animated Draw Border on Focus */}
+      <form onSubmit={(e) => handleSearchSubmit(e)} className="relative z-30 max-w-2xl mb-5">
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#8a8a8a]">
+            <Search className="h-4 w-4" />
           </div>
+          
           <input
             type="text"
-            placeholder="Type a movie title..."
+            placeholder="Type any movie title (e.g. Interstellar, The Matrix)..."
             value={searchQuery}
             onChange={handleInputChange}
             onFocus={() => {
+              setIsInputFocused(true);
               if (suggestions.length > 0) setIsDropdownOpen(true);
             }}
-            className="w-full pl-11 pr-14 sm:pr-52 py-3 sm:py-4 bg-slate-950/90 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-sm sm:text-base transition-all"
+            onBlur={() => setIsInputFocused(false)}
+            className="w-full pl-11 pr-36 py-3.5 bg-black border border-white/20 rounded-full text-xs sm:text-sm font-medium tracking-wide text-white placeholder-[#666666] focus:outline-none focus:border-white transition-all duration-300 relative z-10"
           />
+
+          {/* Animated SVG Border that draws on Focus */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-20 rounded-full overflow-visible">
+            <rect
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              rx="9999"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="1.5"
+              strokeDasharray="600"
+              strokeDashoffset={isInputFocused ? "0" : "600"}
+              style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}
+            />
+          </svg>
+
           <button
             type="submit"
             disabled={isSearching}
-            className="absolute right-1.5 sm:right-2 p-2.5 sm:px-5 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+            className="btn-cinema absolute right-1.5 top-1.5 bottom-1.5 px-5 rounded-full flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest disabled:opacity-50 z-20"
           >
-            <span className="hidden sm:inline">{isSearching ? 'Analyzing...' : 'Get Recommendations'}</span>
-            <ArrowRight className="w-4 h-4 sm:w-4 sm:h-4" />
+            <span>{isSearching ? 'COMPUTING...' : 'DISCOVER'}</span>
+            <ArrowRight className="w-3 h-3" />
           </button>
         </div>
 
         {/* Autocomplete Dropdown */}
-        {isDropdownOpen && suggestions.length > 0 && (
-          <div 
-            ref={dropdownRef}
-            className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
-          >
-            <ul className="py-2">
-              {suggestions.map((suggestion, idx) => (
-                <li key={idx}>
-                  <button
-                    type="button"
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full text-left px-5 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors focus:outline-none focus:bg-slate-800"
-                  >
-                    <Search className="w-4 h-4 inline-block mr-3 text-slate-500" />
-                    {suggestion}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <AnimatePresence>
+          {isDropdownOpen && suggestions.length > 0 && (
+            <motion.div 
+              ref={dropdownRef}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0a] border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50 text-xs"
+            >
+              <ul className="py-2">
+                {suggestions.map((suggestion, idx) => (
+                  <li key={idx}>
+                    <button
+                      type="button"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="w-full text-left px-5 py-2.5 text-[#d4d4d4] hover:bg-white/10 hover:text-white transition-colors flex items-center justify-between"
+                    >
+                      <span className="font-medium tracking-wide">{suggestion}</span>
+                      <ArrowRight className="w-3 h-3 text-[#666666]" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </form>
 
       {/* Quick Suggestion Pills */}
-      <div className="relative z-10 flex flex-wrap items-center gap-2 mb-10 text-xs text-slate-400">
-        <span className="font-semibold text-slate-500">Popular Searches:</span>
+      <div className="flex flex-wrap items-center gap-2 mb-10 text-xs">
+        <span className="label-caps text-[#666666] mr-1">CURATED SEEDS:</span>
         {suggestionPills.map((title) => (
           <button
             key={title}
             type="button"
             onClick={() => handleSuggestionClick(title)}
-            className={`px-3 py-1.5 rounded-full border transition-all ${
+            className={`px-3 py-1 rounded-full text-[11px] font-medium tracking-wider uppercase transition-all duration-200 border ${
               activeQuery.toLowerCase() === title.toLowerCase()
-                ? 'bg-red-600 text-white border-red-500 shadow-md font-bold'
-                : 'bg-slate-950/80 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                ? 'bg-white text-black border-white'
+                : 'bg-black text-[#8a8a8a] border-white/15 hover:border-white/40 hover:text-white'
             }`}
           >
             {title}
@@ -326,47 +333,44 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
         ))}
       </div>
 
-      {/* Recommendation Results Grid / Loading State */}
-      <div className="relative z-10">
+      {/* Results View / Shimmer Loading Skeleton */}
+      <div>
         {isSearching ? (
-          /* Loading Skeleton State */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {[1, 2, 3, 4, 5].map((n) => (
-              <div key={n} className="bg-slate-950/80 rounded-2xl border border-slate-800 p-4 space-y-4 animate-pulse">
-                <div className="aspect-[2/3] bg-slate-800 rounded-xl" />
-                <div className="h-4 bg-slate-800 rounded w-3/4" />
-                <div className="h-3 bg-slate-800 rounded w-1/2" />
-                <div className="h-3 bg-slate-800 rounded w-full" />
+              <div key={n} className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3 space-y-3">
+                <div className="aspect-[2/3] skeleton-monochrome rounded-lg" />
+                <div className="h-4 skeleton-monochrome rounded w-3/4" />
+                <div className="h-3 skeleton-monochrome rounded w-1/2" />
+                <div className="h-3 skeleton-monochrome rounded w-full" />
               </div>
             ))}
           </div>
         ) : (
-          /* Recommendation Cards */
           <>
-            {/* Desktop Grid */}
+            {/* Desktop Grid with Staggered Entrance from Bottom */}
             <motion.div 
-              variants={containerVariants}
+              variants={staggerContainerVariants}
               initial="hidden"
               animate="visible"
-              className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-6"
+              className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-5"
             >
               {recommendations.map((movie, index) => renderCard(movie, index))}
             </motion.div>
 
-            {/* Mobile Carousel */}
-            <div className="block sm:hidden -mx-4">
+            {/* Mobile Carousel View */}
+            <div className="block sm:hidden -mx-4 px-2">
               <Swiper
-                spaceBetween={16}
-                slidesPerView={1.2}
+                spaceBetween={14}
+                slidesPerView={1.3}
                 centeredSlides={true}
                 loop={true}
-                grabCursor={true}
-                speed={800}
-                className="w-full !px-4 !py-4"
+                speed={700}
+                className="w-full !py-2"
               >
                 {recommendations.map((movie, index) => (
                   <SwiperSlide key={movie.id || index} className="!h-auto flex">
-                    {renderCard(movie, index, true)}
+                    {renderCard(movie, index)}
                   </SwiperSlide>
                 ))}
               </Swiper>
@@ -375,6 +379,6 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
         )}
       </div>
 
-    </motion.section>
+    </section>
   );
 }

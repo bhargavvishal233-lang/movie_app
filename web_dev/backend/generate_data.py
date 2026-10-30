@@ -23,12 +23,24 @@ def generate_pickle_files():
 
     print("⚡ Generating production movie dataset from TMDB CSV files...")
 
-    # Adjust path if needed
-    movies_csv = os.path.expanduser("~/Desktop/ML_PROJECTS/tmdb_5000_movies.csv")
-    credits_csv = os.path.expanduser("~/Desktop/ML_PROJECTS/tmdb_5000_credits.csv")
+    # Search candidate paths for TMDB dataset
+    candidate_dirs = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")),
+        os.path.dirname(__file__),
+        os.path.expanduser("~/Desktop/ML_PROJECTS"),
+    ]
+    movies_csv = None
+    credits_csv = None
+    for d in candidate_dirs:
+        m_path = os.path.join(d, "tmdb_5000_movies.csv")
+        c_path = os.path.join(d, "tmdb_5000_credits.csv")
+        if os.path.exists(m_path) and os.path.exists(c_path):
+            movies_csv = m_path
+            credits_csv = c_path
+            break
     
-    if not os.path.exists(movies_csv) or not os.path.exists(credits_csv):
-        print(f"❌ Could not find CSV files at {movies_csv} or {credits_csv}")
+    if not movies_csv or not credits_csv:
+        print(f"❌ Could not find TMDB CSV files in candidate directories")
         return
 
     # Load data

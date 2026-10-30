@@ -1,2 +1,39 @@
+# Model & Large Binary Files
 *.pkl
-*.pkl
+*.pickle
+*.h5
+
+# Node
+node_modules/
+web_dev/node_modules/
+dist/
+web_dev/dist/
+dist-ssr/
+web_dev/dist-ssr/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Environment variables
+.env
+.env.*
+*.local
+
+# System files & IDEs
+.DS_Store
+*/.DS_Store
+.virtual_documents/
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

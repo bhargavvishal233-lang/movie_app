@@ -8,27 +8,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#fff1f2',
-          100: '#ffe4e6',
-          500: '#f43f5e',
-          600: '#e11d48',
-          700: '#be123c',
-          900: '#881337',
+        mono: {
+          black: '#000000',
+          dark: '#0a0a0a',
+          surface: '#121212',
+          elevated: '#1a1a1a',
+          border: 'rgba(255, 255, 255, 0.12)',
+          subtle: 'rgba(255, 255, 255, 0.06)',
+          muted: '#8a8a8a',
+          white: '#ffffff',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['"Inter Tight"', '"Space Grotesk"', 'sans-serif'],
+        sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        grotesk: ['"Space Grotesk"', 'sans-serif'],
+      },
+      letterSpacing: {
+        tighter: '-0.04em',
+        widest: '0.25em',
+        ultra: '0.35em',
       },
       animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'float': 'float 6s ease-in-out infinite',
-      },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-6px)' },
-        }
+        'spin-slow': 'spin 12s linear infinite',
+        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       }
     },
   },
