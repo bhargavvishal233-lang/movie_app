@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Heart, ChevronDown, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -19,30 +19,21 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
 
+  // Active indicator dot state & refs
+  const [dotX, setDotX] = useState(0);
+  const dotRef = useRef(null);
+  const navContainerRef = useRef(null);
+  const linkRefs = useRef([]);
+  const isFirstMount = useRef(true);
+
+  // Performance refs to prevent re-rendering on every scroll tick
+  const isVisibleRef = useRef(true);
+  const isScrolledRef = useRef(false);
+  const lastScrollYRef = useRef(0);
+
   const { currentUser, setIsAuthModalOpen, logout } = useAuth();
-
-  // Scroll detection: hide on scroll down, show on scroll up; background darkens after 40px
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      setIsScrolled(currentScrollY > 40);
-
-      if (currentScrollY > lastScrollY && currentScrollY > 120) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   const navLinks = [
     { label: 'Discover', genre: 'All' },
@@ -50,6 +41,90 @@ export default function Navbar({
     { label: 'Sci-Fi', genre: 'Sci-Fi' },
     { label: 'Action', genre: 'Action' },
   ];
+
+  const activeIndex = searchQuery ? -1 : navLinks.findIndex((l) => l.genre === activeGenre);
+
+  // Compute active link X position using layout-relative offsetLeft & offsetWidth
+  const updateDotPosition = useCallback((animate = true) => {
+    if (activeIndex < 0) return;
+    const linkEl = linkRefs.current[activeIndex];
+    if (!linkEl) return;
+
+    // x = link.offsetLeft + link.offsetWidth / 2 - 2 (layout-relative, independent of navbar transform or page scroll)
+    const targetX = linkEl.offsetLeft + linkEl.offsetWidth / 2 - 2;
+
+    if (dotRef.current) {
+      if (!animate) {
+        dotRef.current.style.transition = 'none';
+        dotRef.current.style.transform = `translateX(${targetX}px)`;
+        void dotRef.current.offsetHeight; // force reflow
+        dotRef.current.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease';
+      } else {
+        dotRef.current.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease';
+        dotRef.current.style.transform = `translateX(${targetX}px)`;
+      }
+    }
+    setDotX(targetX);
+  }, [activeIndex]);
+
+  // Position indicator on active link change and initial mount
+  useLayoutEffect(() => {
+    if (isFirstMount.current) {
+      updateDotPosition(false);
+      isFirstMount.current = false;
+    } else {
+      updateDotPosition(true);
+    }
+  }, [updateDotPosition]);
+
+  // Keep indicator aligned on window resize and font load
+  useEffect(() => {
+    const handleResize = () => {
+      updateDotPosition(false);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        updateDotPosition(false);
+      });
+    }
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [updateDotPosition]);
+
+  // Optimized Scroll Detection: Zero state re-renders during smooth scrolling
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Only trigger state update when crossing 40px threshold
+      const nextScrolled = currentScrollY > 40;
+      if (nextScrolled !== isScrolledRef.current) {
+        isScrolledRef.current = nextScrolled;
+        setIsScrolled(nextScrolled);
+      }
+
+      // Only trigger state update when visibility state actually toggles
+      if (currentScrollY > lastScrollYRef.current && currentScrollY > 120) {
+        if (isVisibleRef.current) {
+          isVisibleRef.current = false;
+          setIsVisible(false);
+        }
+      } else {
+        if (!isVisibleRef.current) {
+          isVisibleRef.current = true;
+          setIsVisible(true);
+        }
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLinkClick = (genre) => {
     setActiveGenre(genre);
@@ -83,15 +158,19 @@ export default function Navbar({
               <Logo size="default" />
             </div>
 
-            {/* Desktop Navigation Links with Clipped Text Roll-Over & Shared Sliding Dot */}
-            <nav className="hidden md:flex items-center space-x-10 text-xs font-semibold uppercase tracking-widest">
-              {navLinks.map((link) => {
+            {/* Desktop Navigation Links with Clipped Roll-Over & Layout-Relative Sliding Dot */}
+            <nav 
+              ref={navContainerRef}
+              className="hidden md:flex items-center space-x-10 text-xs font-semibold uppercase tracking-widest relative"
+            >
+              {navLinks.map((link, idx) => {
                 const isActive = activeGenre === link.genre && !searchQuery;
                 return (
                   <button
                     key={link.label}
+                    ref={(el) => (linkRefs.current[idx] = el)}
                     onClick={() => handleLinkClick(link.genre)}
-                    className={`group relative flex flex-col items-center py-1 transition-colors ${
+                    className={`group relative flex flex-col items-center py-1 transition-colors cursor-pointer ${
                       isActive ? 'text-white' : 'text-[#8a8a8a] hover:text-white'
                     }`}
                   >
@@ -102,18 +181,30 @@ export default function Navbar({
                         <span className="block h-[1.25em] leading-[1.25em] text-white" aria-hidden="true">{link.label}</span>
                       </span>
                     </span>
-
-                    {/* Shared Layout Active Indicator Micro-Dot (Slides between links) */}
-                    {isActive && (
-                      <motion.span 
-                        layoutId="activeNavDot"
-                        className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-white pointer-events-none"
-                        transition={{ duration: 0.35, ease: CINEMATIC_EASE }}
-                      />
-                    )}
                   </button>
                 );
               })}
+
+              {/* EXACTLY ONE Active Indicator Dot: Fixed Y, layout-relative X */}
+              <span 
+                ref={dotRef}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  bottom: '-8px',
+                  width: '4px',
+                  height: '4px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#ffffff',
+                  pointerEvents: 'none',
+                  willChange: 'transform',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: `translateX(${dotX}px)`,
+                  opacity: activeIndex >= 0 ? 1 : 0,
+                }}
+                aria-hidden="true"
+              />
             </nav>
 
             {/* Actions: Search, Watchlist, Auth */}
@@ -144,7 +235,7 @@ export default function Navbar({
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#8a8a8a] hover:text-white text-xs"
+                    className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#8a8a8a] hover:text-white text-xs cursor-pointer"
                   >
                     ✕
                   </button>
@@ -156,7 +247,7 @@ export default function Navbar({
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onOpenWatchlist}
-                className="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                className="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
                 title="Watchlist"
               >
                 <Heart className="w-4 h-4 stroke-[1.8]" />
@@ -176,7 +267,7 @@ export default function Navbar({
                 <div className="relative">
                   <button
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center space-x-1.5 p-1 rounded-full border border-white/20 hover:border-white transition-colors"
+                    className="flex items-center space-x-1.5 p-1 rounded-full border border-white/20 hover:border-white transition-colors cursor-pointer"
                   >
                     {currentUser.photoURL ? (
                       <img 
@@ -209,13 +300,13 @@ export default function Navbar({
                         <div className="py-1">
                           <button
                             onClick={() => { setProfileOpen(false); onOpenWatchlist(); }}
-                            className="w-full text-left flex items-center px-4 py-2 text-[#d4d4d4] hover:bg-white/10 hover:text-white transition-colors uppercase tracking-wider text-[11px]"
+                            className="w-full text-left flex items-center px-4 py-2 text-[#d4d4d4] hover:bg-white/10 hover:text-white transition-colors uppercase tracking-wider text-[11px] cursor-pointer"
                           >
                             <Heart className="w-3.5 h-3.5 mr-2" /> Watchlist ({watchlistCount})
                           </button>
                           <button
                             onClick={() => { setProfileOpen(false); logout(); }}
-                            className="w-full text-left flex items-center px-4 py-2 text-[#8a8a8a] hover:bg-white/10 hover:text-white transition-colors uppercase tracking-wider text-[11px]"
+                            className="w-full text-left flex items-center px-4 py-2 text-[#8a8a8a] hover:bg-white/10 hover:text-white transition-colors uppercase tracking-wider text-[11px] cursor-pointer"
                           >
                             <LogOut className="w-3.5 h-3.5 mr-2" /> Sign Out
                           </button>
@@ -228,7 +319,7 @@ export default function Navbar({
                 /* Sign In Button: Fills from bottom on hover */
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="group relative overflow-hidden px-4 py-1.5 border border-white rounded-full text-xs font-bold tracking-widest uppercase transition-colors"
+                  className="group relative overflow-hidden px-4 py-1.5 border border-white rounded-full text-xs font-bold tracking-widest uppercase transition-colors cursor-pointer"
                 >
                   <span className="absolute inset-0 bg-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
                   <span className="relative z-10 text-white group-hover:text-black transition-colors duration-300">
@@ -240,7 +331,7 @@ export default function Navbar({
               {/* Mobile Hamburger Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-white/80 hover:text-white"
+                className="md:hidden p-2 text-white/80 hover:text-white cursor-pointer"
                 aria-label="Toggle Menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -271,7 +362,7 @@ export default function Navbar({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 + idx * 0.05 }}
                   onClick={() => handleLinkClick(link.genre)}
-                  className={`text-left text-2xl font-black uppercase tracking-tight flex items-center justify-between ${
+                  className={`text-left text-2xl font-black uppercase tracking-tight flex items-center justify-between cursor-pointer ${
                     activeGenre === link.genre ? 'text-white' : 'text-[#8a8a8a]'
                   }`}
                 >
@@ -284,7 +375,7 @@ export default function Navbar({
             <div className="pt-8 border-t border-white/10 flex flex-col space-y-4">
               <button
                 onClick={() => { setMobileMenuOpen(false); onOpenWatchlist(); }}
-                className="flex items-center space-x-2 text-sm uppercase tracking-wider text-[#d4d4d4]"
+                className="flex items-center space-x-2 text-sm uppercase tracking-wider text-[#d4d4d4] cursor-pointer"
               >
                 <Heart className="w-4 h-4" />
                 <span>Saved Watchlist ({watchlistCount})</span>
