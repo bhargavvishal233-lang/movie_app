@@ -68,25 +68,13 @@ export default function HeroBanner({
     lastMovieIdRef.current = movie.id;
 
     const ctx = gsap.context(() => {
-      // 1. Ken Burns background scaling + ScrollTrigger Parallax
+      // 1. Ken Burns background scaling
       if (bgImageRef.current) {
         // Slow Ken Burns over 8s (scale 1.12 to 1.0)
         gsap.fromTo(bgImageRef.current,
           { scale: 1.12 },
           { scale: 1.0, duration: 8, ease: 'power1.out' }
         );
-
-        // Gentle scroll parallax (moves yPercent: 12 on scroll)
-        gsap.to(bgImageRef.current, {
-          yPercent: 12,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: heroContainerRef.current,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true,
-          }
-        });
       }
 
       const tl = gsap.timeline();

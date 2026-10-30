@@ -50,7 +50,7 @@ export default function MovieCarousel({
   title, 
   subtitle, 
   movies = [], 
-  rowIndex = 0, // 0: fade-up, 1: slide-left, 2: slide-right, 3: clip-scale
+  rowIndex = 0, // 0: fade-up, 1: scale-in, 2: contrast-bloom, 3: lift-reveal
   onPlayTrailer, 
   onOpenDetails, 
   watchlist = [], 
@@ -58,57 +58,57 @@ export default function MovieCarousel({
 }) {
   const prevRef = useRef(null);
   const nextRef = useRef(null);
-  const [skewDeg, setSkewDeg] = useState(0);
-  const lastTranslateRef = useRef(0);
+  const [isBeginning, setIsBeginning] = useState(true);
+  const [isEnd, setIsEnd] = useState(false);
 
   if (!movies.length) return null;
 
   // Split title letters for character-level masked slide-up
   const titleChars = Array.from(title);
 
-  // Distinct entrance animation per row index
+  // Distinct cinematic entrance motion per row index without horizontal layout collision
   const getRowVariants = () => {
     switch (rowIndex % 4) {
       case 0:
-        // Row 1: Cards fade up with stagger
+        // Row 1: Cards fade up with smooth stagger
         return {
-          hidden: { opacity: 0, y: 40 },
+          hidden: { opacity: 0, y: 14 },
           visible: (i) => ({
             opacity: 1,
             y: 0,
-            transition: { duration: 0.65, delay: i * 0.06, ease: CINEMATIC_EASE }
+            transition: { duration: 0.65, delay: i * 0.05, ease: CINEMATIC_EASE }
           })
         };
       case 1:
-        // Row 2: Cards slide in from the left in a wave
+        // Row 2: Cards scale in gently with stagger
         return {
-          hidden: { opacity: 0, x: -60 },
+          hidden: { opacity: 0, scale: 0.96 },
           visible: (i) => ({
             opacity: 1,
-            x: 0,
-            transition: { duration: 0.7, delay: i * 0.08, ease: CINEMATIC_EASE }
+            scale: 1,
+            transition: { duration: 0.65, delay: i * 0.05, ease: CINEMATIC_EASE }
           })
         };
       case 2:
-        // Row 3: Cards slide in from the right
+        // Row 3 (Speculative & Sci-Fi): Smooth contrast & brightness bloom with stagger
         return {
-          hidden: { opacity: 0, x: 60 },
+          hidden: { opacity: 0, filter: 'contrast(125%) brightness(1.2)' },
           visible: (i) => ({
             opacity: 1,
-            x: 0,
-            transition: { duration: 0.7, delay: i * 0.08, ease: CINEMATIC_EASE }
+            filter: 'contrast(100%) brightness(1)',
+            transition: { duration: 0.65, delay: i * 0.05, ease: CINEMATIC_EASE }
           })
         };
       case 3:
       default:
-        // Row 4: Cards scale up from 0.92 with clip-path inset reveal from bottom
+        // Row 4 (High-Octane Action): Subtle lift and scale reveal
         return {
-          hidden: { opacity: 0, scale: 0.92, clipPath: 'inset(100% 0% 0% 0%)' },
+          hidden: { opacity: 0, y: 8, scale: 0.98 },
           visible: (i) => ({
             opacity: 1,
+            y: 0,
             scale: 1,
-            clipPath: 'inset(0% 0% 0% 0%)',
-            transition: { duration: 0.7, delay: i * 0.07, ease: CINEMATIC_EASE }
+            transition: { duration: 0.65, delay: i * 0.05, ease: CINEMATIC_EASE }
           })
         };
     }
@@ -170,10 +170,12 @@ export default function MovieCarousel({
           <MagneticArrowButton
             buttonRef={prevRef}
             direction="left"
+            disabled={isBeginning}
           />
           <MagneticArrowButton
             buttonRef={nextRef}
             direction="right"
+            disabled={isEnd}
           />
         </motion.div>
 
@@ -187,18 +189,13 @@ export default function MovieCarousel({
         />
       </div>
 
-      {/* Swiper Slider with Row-Specific Motion & Inertia Skew */}
-      <div 
-        style={{
-          transform: `skewX(${skewDeg}deg)`,
-          transition: 'transform 0.15s ease-out'
-        }}
-      >
+      {/* Swiper Slider with Stable Document Flow */}
+      <div className="relative overflow-hidden py-2">
         <Swiper
           modules={[Navigation]}
           spaceBetween={16}
-          loop={true}
-          speed={650}
+          loop={false}
+          speed={550}
           navigation={{
             prevEl: prevRef.current,
             nextEl: nextRef.current,
@@ -207,15 +204,13 @@ export default function MovieCarousel({
             swiper.params.navigation.prevEl = prevRef.current;
             swiper.params.navigation.nextEl = nextRef.current;
           }}
-          onTouchMove={(swiper) => {
-            const currentTranslate = swiper.translate;
-            const diff = currentTranslate - lastTranslateRef.current;
-            lastTranslateRef.current = currentTranslate;
-            const calculatedSkew = Math.max(-2.8, Math.min(2.8, -diff * 0.08));
-            setSkewDeg(calculatedSkew);
+          onInit={(swiper) => {
+            setIsBeginning(swiper.isBeginning);
+            setIsEnd(swiper.isEnd);
           }}
-          onTouchEnd={() => {
-            setSkewDeg(0);
+          onSlideChange={(swiper) => {
+            setIsBeginning(swiper.isBeginning);
+            setIsEnd(swiper.isEnd);
           }}
           breakpoints={{
             320: {
@@ -239,7 +234,7 @@ export default function MovieCarousel({
               spaceBetween: 24,
             },
           }}
-          className="!overflow-visible py-2"
+          className="w-full"
         >
           {movies.map((movie, index) => (
             <SwiperSlide key={movie.id} className="h-auto">
@@ -247,7 +242,7 @@ export default function MovieCarousel({
                 custom={index}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
+                viewport={{ once: true, amount: 0.1 }}
                 variants={rowVariants}
                 className="h-full"
               >

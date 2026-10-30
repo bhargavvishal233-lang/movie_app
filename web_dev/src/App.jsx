@@ -17,7 +17,7 @@ import CustomCursor from './components/CustomCursor';
 import { IntroProvider, useIntro } from './context/IntroContext';
 import { mockMovies } from './data/mockMovies';
 import { enhanceMoviesWithTMDB } from './utils/tmdb';
-import { initSmoothScroll, scrollToTop, CINEMATIC_EASE } from './utils/animations';
+import { initSmoothScroll, scrollToTop, refreshScroll, CINEMATIC_EASE } from './utils/animations';
 import { Film, ArrowUp } from 'lucide-react';
 import './App.css';
 
@@ -64,12 +64,23 @@ function MainAppContent() {
     };
   }, []);
 
+  // Refresh scroll metrics when intro completes so Lenis & ScrollTrigger know true dimensions
+  useEffect(() => {
+    if (introDone) {
+      const timer = setTimeout(() => {
+        refreshScroll();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [introDone]);
+
   // Async TMDB enhancement in background (updates posters/trailers without blocking UI)
   useEffect(() => {
     let isMounted = true;
     enhanceMoviesWithTMDB(mockMovies).then((enhanced) => {
       if (isMounted && enhanced && enhanced.length > 0) {
         setMovies(enhanced);
+        setTimeout(() => refreshScroll(), 100);
       }
     }).catch(() => {
       // Keep mockMovies if TMDB/FastAPI is offline
@@ -117,6 +128,14 @@ function MainAppContent() {
   const actionMovies = movies.filter(m => m.genre === 'Action' || (m.subGenres && m.subGenres.includes('Action')));
 
   const isSearchOrFilterActive = searchQuery.trim() !== '' || activeGenre !== 'All';
+
+  // Synchronize scroll metrics on view/filter mode transitions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refreshScroll();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [isSearchOrFilterActive, activeGenre, searchQuery]);
 
   return (
     <div className="min-h-screen min-h-[100vh] bg-black text-white flex flex-col font-sans relative overflow-x-hidden selection:bg-white selection:text-black">
@@ -344,10 +363,8 @@ function MainAppContent() {
 
       </main>
 
-      {/* 8. Signature Editorial Footer - Only rendered when intro is done */}
-      {introDone && !loading && (
-        <Footer />
-      )}
+      {/* 8. Signature Editorial Footer in natural document flow */}
+      <Footer />
 
       {/* 9. Floating "Back to Top" Button with Scale Pop (after 600px scroll) */}
       <AnimatePresence>

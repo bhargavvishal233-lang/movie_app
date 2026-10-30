@@ -102,10 +102,10 @@ export default function Footer() {
           }}
         />
 
-        {/* Ambient Rising Glow on Scroll */}
+        {/* Ambient Glow on Scroll */}
         <motion.div 
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 0.65, y: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 0.65 }}
           viewport={{ once: true }}
           transition={{ duration: 1.1, ease: CINEMATIC_EASE }}
           className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none blur-2xl"
@@ -114,10 +114,10 @@ export default function Footer() {
           }}
         />
 
-        {/* Giant Barcode-Striped Word with Breathing Animation */}
+        {/* Giant Barcode-Striped Word with Breathing Animation (Fixed Position, Opacity Fade) */}
         <motion.div
-          initial={{ opacity: 0, y: 35 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.9, ease: CINEMATIC_EASE }}
           className="w-full text-center overflow-hidden px-2 relative z-20"

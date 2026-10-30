@@ -94,7 +94,7 @@ export default function Navbar({
     return () => window.removeEventListener('resize', handleResize);
   }, [updateDotPosition]);
 
-  // Optimized Scroll Detection: Zero state re-renders during smooth scrolling
+  // Optimized Scroll Detection with directional hysteresis to prevent jitter/jumping
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -106,13 +106,19 @@ export default function Navbar({
         setIsScrolled(nextScrolled);
       }
 
-      // Only trigger state update when visibility state actually toggles
-      if (currentScrollY > lastScrollYRef.current && currentScrollY > 120) {
+      const delta = currentScrollY - lastScrollYRef.current;
+
+      // Ignore micro-jitter (< 8px)
+      if (Math.abs(delta) < 8) return;
+
+      if (delta > 0 && currentScrollY > 120) {
+        // Scrolling down: hide navbar smoothly
         if (isVisibleRef.current) {
           isVisibleRef.current = false;
           setIsVisible(false);
         }
-      } else {
+      } else if (delta < -10 || currentScrollY <= 40) {
+        // Scrolling up or at top: reveal navbar
         if (!isVisibleRef.current) {
           isVisibleRef.current = true;
           setIsVisible(true);

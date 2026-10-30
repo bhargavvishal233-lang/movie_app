@@ -416,9 +416,9 @@ export default function CustomRecommender({ onPlayTrailer, onOpenDetails }) {
               <Swiper
                 spaceBetween={14}
                 slidesPerView={1.3}
-                centeredSlides={true}
-                loop={true}
-                speed={700}
+                centeredSlides={false}
+                loop={false}
+                speed={500}
                 className="w-full !py-2"
               >
                 {recommendations.map((movie, index) => (

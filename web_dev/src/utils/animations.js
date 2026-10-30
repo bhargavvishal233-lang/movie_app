@@ -9,11 +9,13 @@ export const CINEMATIC_EASE = [0.22, 1, 0.36, 1];
 export const GSAP_CINEMATIC_EASE = 'power3.out';
 
 let globalLenis = null;
+let rafTickerHandler = null;
 
 export const getLenis = () => globalLenis;
 
 export const stopScroll = () => {
   if (typeof document !== 'undefined') {
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
   }
   if (globalLenis) {
@@ -23,10 +25,20 @@ export const stopScroll = () => {
 
 export const startScroll = () => {
   if (typeof document !== 'undefined') {
+    document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
   }
   if (globalLenis) {
     globalLenis.start();
+  }
+};
+
+export const refreshScroll = () => {
+  if (globalLenis) {
+    globalLenis.resize();
+  }
+  if (typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.refresh();
   }
 };
 
@@ -43,11 +55,21 @@ export const initSmoothScroll = () => {
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (prefersReduced) return { destroy: () => {} };
 
+  // Destroy any existing instance before initializing a new one
+  if (globalLenis) {
+    if (rafTickerHandler) {
+      gsap.ticker.remove(rafTickerHandler);
+      rafTickerHandler = null;
+    }
+    globalLenis.destroy();
+    globalLenis = null;
+  }
+
   const lenis = new Lenis({
-    duration: 1.2,
+    duration: 1.1,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     smoothWheel: true,
-    wheelMultiplier: 0.9,
+    wheelMultiplier: 0.95,
     touchMultiplier: 1.5,
   });
 
@@ -56,14 +78,20 @@ export const initSmoothScroll = () => {
   // Synchronize Lenis with GSAP ScrollTrigger
   lenis.on('scroll', ScrollTrigger.update);
 
-  gsap.ticker.add((time) => {
+  rafTickerHandler = (time) => {
     lenis.raf(time * 1000);
-  });
+  };
+
+  gsap.ticker.add(rafTickerHandler);
   gsap.ticker.lagSmoothing(0);
 
   return {
     lenis,
     destroy: () => {
+      if (rafTickerHandler) {
+        gsap.ticker.remove(rafTickerHandler);
+        rafTickerHandler = null;
+      }
       lenis.destroy();
       if (globalLenis === lenis) {
         globalLenis = null;

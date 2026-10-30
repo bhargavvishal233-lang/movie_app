@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 import { hasIntroPlayed, setIntroPlayed } from '../utils/introState';
 import { mockMovies } from '../data/mockMovies';
+import { stopScroll, startScroll } from '../utils/animations';
 
 gsap.registerPlugin(CustomEase);
 
@@ -129,6 +130,7 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
       ease: 'power3.inOut',
       onComplete: () => {
         setIntroPlayed(true);
+        startScroll();
         onIntroCompleteRef.current?.();
       }
     });
@@ -149,10 +151,14 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
   useLayoutEffect(() => {
     // If intro already played in this runtime (e.g. SPA route change), exit immediately
     if (hasIntroPlayed()) {
+      startScroll();
       onIntroOverlapRef.current?.();
       onIntroCompleteRef.current?.();
       return;
     }
+
+    // Stop scroll while intro is playing to prevent background scroll position desync
+    stopScroll();
 
     // Mark intro as started in module state
     setIntroPlayed(true);
@@ -167,6 +173,7 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
         duration: 0.4,
         onComplete: () => {
           setIntroPlayed(true);
+          startScroll();
           onIntroCompleteRef.current?.();
         }
       });
@@ -217,6 +224,7 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
         onComplete: () => {
           isCompletedRef.current = true;
           setIntroPlayed(true);
+          startScroll();
           onIntroCompleteRef.current?.();
         }
       });
@@ -416,6 +424,7 @@ export default function Preloader({ onIntroOverlap, onIntroComplete, heroImageUr
 
     return () => {
       ctx.revert();
+      startScroll();
       // If unmounted before completing (React StrictMode initial dev simulation), allow Mount 2
       if (!isCompletedRef.current) {
         setIntroPlayed(false);
