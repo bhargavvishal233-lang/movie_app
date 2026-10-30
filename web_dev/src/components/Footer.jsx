@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
 import Logo from './Logo';
 import { CINEMATIC_EASE } from '../utils/animations';
 
@@ -28,13 +27,6 @@ export default function Footer() {
     { id: 7, left: '94%', delay: '0.4s', duration: '6.0s', size: '1.5px' },
   ];
 
-  const socialLinks = [
-    { label: 'GitHub', url: 'https://github.com' },
-    { label: 'Instagram', url: 'https://instagram.com' },
-    { label: 'X / Twitter', url: 'https://x.com' },
-    { label: 'LinkedIn', url: 'https://linkedin.com' },
-  ];
-
   return (
     <footer 
       ref={footerRef}
@@ -42,20 +34,20 @@ export default function Footer() {
       className="relative bg-black border-t border-white/10 pt-20 pb-10 overflow-hidden select-none"
     >
       
-      {/* Upper Footer: Balanced 3-Column Layout */}
+      {/* Upper Footer: Balanced Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
           
-          {/* Column 1: Brand & Dossier Statement (Cols 1-5) */}
-          <div className="md:col-span-5 max-w-sm">
+          {/* Column 1: Brand & Dossier Statement (Cols 1-8) */}
+          <div className="md:col-span-8 max-w-md">
             <Logo size="default" />
             <p className="text-xs text-[#8a8a8a] leading-relaxed mt-4 font-normal">
               An editorial cinematic interface and machine-learning recommendation archive powered by cosine similarity vectors across 4,800+ films.
             </p>
           </div>
 
-          {/* Column 2: Navigation Links (Cols 6-8) */}
-          <div className="md:col-span-3 flex flex-col space-y-3.5 text-xs font-semibold uppercase tracking-widest">
+          {/* Column 2: Navigation Links (Cols 9-12) */}
+          <div className="md:col-span-4 flex flex-col space-y-3.5 text-xs font-semibold uppercase tracking-widest md:items-end">
             <span className="label-caps text-[#555555] mb-1">ARCHIVE</span>
             <a href="#" className="group relative block overflow-hidden h-[1.25em] leading-[1.25em] text-[#d4d4d4] hover:text-white transition-colors w-fit">
               <span className="flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1/2">
@@ -75,28 +67,6 @@ export default function Footer() {
                 <span className="block h-[1.25em] leading-[1.25em] text-white" aria-hidden="true">Recommendations</span>
               </span>
             </a>
-          </div>
-
-          {/* Column 3: CONNECT (Cols 9-12) */}
-          <div className="md:col-span-4 flex flex-col space-y-3.5 text-xs font-semibold uppercase tracking-widest">
-            <span className="label-caps text-[#555555] mb-1">CONNECT</span>
-            {socialLinks.map((item) => (
-              <a 
-                key={item.label}
-                href={item.url} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="flex items-center space-x-2 text-[#d4d4d4] hover:text-white transition-colors group w-fit"
-              >
-                <span className="block overflow-hidden h-[1.25em] leading-[1.25em]">
-                  <span className="flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1/2">
-                    <span className="block h-[1.25em] leading-[1.25em]">{item.label}</span>
-                    <span className="block h-[1.25em] leading-[1.25em] text-white" aria-hidden="true">{item.label}</span>
-                  </span>
-                </span>
-                <ArrowUpRight className="w-3.5 h-3.5 text-[#666666] group-hover:text-white transition-colors group-hover:translate-x-0.5 group-hover:-translate-y-0.5 duration-200" />
-              </a>
-            ))}
           </div>
 
         </div>
