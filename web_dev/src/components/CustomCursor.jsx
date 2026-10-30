@@ -87,7 +87,7 @@ export default function CustomCursor() {
 
   return (
     <div 
-      className={`fixed top-0 left-0 pointer-events-none z-[9999] transition-opacity duration-200 ${
+      className={`fixed top-0 left-0 pointer-events-none z-[10001] transition-opacity duration-200 ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
       style={{ mixBlendMode: 'difference' }}
